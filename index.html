@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ร้านเปิบพิสดาร (Dark Mode)</title>
+    <!-- นำเข้า Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- นำเข้าฟอนต์ภาษาไทย -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #09090b; /* Zinc 950 */
+            color: #e4e4e7;
+        }
+        /* เอฟเฟกต์แสงนีออน */
+        .neon-text-green { text-shadow: 0 0 5px #22c55e, 0 0 10px #22c55e; }
+        .neon-text-red { text-shadow: 0 0 5px #ef4444, 0 0 10px #ef4444; }
+        .neon-border { box-shadow: 0 0 10px rgba(168, 85, 247, 0.4), inset 0 0 10px rgba(168, 85, 247, 0.2); border: 1px solid #a855f7; }
+        .menu-card { transition: all 0.3s ease; }
+        .menu-card:hover { 
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.6), inset 0 0 10px rgba(239, 68, 68, 0.2); 
+            border-color: #ef4444; 
+            transform: translateY(-5px);
+        }
+        /* ซ่อน Scrollbar แต่ยังเลื่อนได้ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #18181b; }
+        ::-webkit-scrollbar-thumb { background: #52525b; border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- แถบนำทาง (Header) -->
+    <header class="p-6 text-center bg-zinc-900 border-b border-purple-700 neon-border sticky top-0 z-10">
+        <h1 class="text-4xl font-bold text-purple-400 mb-2 tracking-wider drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]">
+            💀 ร้านเปิบพิสดาร 💀
+        </h1>
+        <p class="text-zinc-400 text-sm md:text-base">เมนูสุดลึกลับ รสชาติที่โลกและมิติอื่นต้องจารึก</p>
+        
+        <div class="mt-4 flex justify-center gap-4">
+            <button onclick="showPage('menu')" class="px-5 py-2 bg-purple-700 hover:bg-purple-600 text-white rounded-lg shadow-[0_0_10px_#7e22ce] transition-colors">
+                🍽️ เมนูอาหาร
+            </button>
+            <button onclick="showPage('history')" class="px-5 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition-colors">
+                📜 ประวัติการสั่งซื้อ
+            </button>
+        </div>
+    </header>
+
+    <!-- พื้นที่แสดงเนื้อหาหลัก -->
+    <main class="container mx-auto p-4 flex flex-col lg:flex-row gap-6 mt-6 flex-1">
+        
+        <!-- ส่วนหน้าจอ: เมนูอาหาร -->
+        <div id="page-menu" class="flex-1 w-full">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold text-green-400 neon-text-green">เมนูมรณะ</h2>
+                <button onclick="addMysteryMenu()" class="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold animate-pulse shadow-[0_0_15px_#16a34a] border border-green-400">
+                    🔮 สุ่มเมนูลับมิติพิศวง
+                </button>
+            </div>
+            <!-- รายการเมนูจะถูกแทรกที่นี่ด้วย JS -->
+            <div id="menu-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-10"></div>
+        </div>
+
+        <!-- ส่วนหน้าจอ: ประวัติการสั่งซื้อ -->
+        <div id="page-history" class="flex-1 w-full hidden">
+            <h2 class="text-2xl font-semibold text-yellow-400 mb-6 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]">
+                📜 ประวัติการสั่งซื้อของคุณ
+            </h2>
+            <!-- รายการประวัติจะถูกแทรกที่นี่ด้วย JS -->
+            <div id="history-list" class="space-y-4 pb-10"></div>
+        </div>
+
+        <!-- ส่วนตะกร้าสินค้า (Sidebar) -->
+        <aside class="w-full lg:w-1/3 bg-zinc-900 p-6 rounded-xl border border-zinc-700 h-fit sticky top-40 shadow-2xl">
+            <h2 class="text-2xl font-semibold text-red-400 mb-4 neon-text-red">🛒 ตะกร้าของคุณ</h2>
+            
+            <div id="cart-items" class="space-y-3 mb-6 max-h-[350px] overflow-y-auto pr-2">
+                <!-- สินค้าในตะกร้าจะถูกแสดงที่นี่ -->
+                <p class="text-zinc-500 text-center italic mt-10">ตะกร้ายังว่างเปล่า... เพิ่มวิญญาณลงไปสิ</p>
+            </div>
+
+            <div class="border-t border-zinc-700 pt-4">
+                <div class="flex justify-between text-xl font-bold mb-6">
+                    <span>ยอดรวมสิริ:</span>
+                    <span id="cart-total" class="text-green-400">฿0</span>
+                </div>
+                <button onclick="checkout()" class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-lg transition-all shadow-[0_0_15px_#b91c1c] hover:shadow-[0_0_25px_#dc2626]">
+                    🩸 ชำระเงิน (พลีชีพ)
+                </button>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        // ข้อมูลเมนูทั้ง 5 
+        const menus = [
+            { id: 1, name: "ต้มยำน้ำตาเงือก", emoji: "🧜‍♀️", desc: "รสชาติเปรี้ยวจี๊ดจ๊าด กลมกล่อมด้วยน้ำตาเงือกสดๆ ที่เก็บตอนพระจันทร์เต็มดวง", price: 599 },
+            { id: 2, name: "ยำเอ็นร้อยหวายไดโนเสาร์", emoji: "🦖", desc: "กรุบกรอบ เคี้ยวเพลิน นำเข้าจากยุคจูราสสิคโดยตรง ปรุงรสด้วยพริกนรกโลกันต์", price: 1290 },
+            { id: 3, name: "ข้าวผัดกะโหลกทะลุมิติ", emoji: "💀", desc: "ข้าวหอมมะลิผัดกับเศษความทรงจำ เสิร์ฟในกะโหลกคริสตัล ทานแล้วเห็นภาพหลอนเล็กน้อย", price: 850 },
+            { id: 4, name: "สเต็กเนื้อยูนิคอร์นหมักเลือดมังกร", emoji: "🦄", desc: "เนื้อนุ่มละลายในปาก หมักเลือดมังกรไฟ 7 ปี มีแสงเรืองรองตอนหั่น", price: 3500 },
+            { id: 5, name: "ไอศกรีมวิญญาณหลอน", emoji: "👻", desc: "เย็นยะเยือกถึงขั้วหัวใจ รสชาติเปลี่ยนไปตามบาปในอดีตของผู้ทาน", price: 199 }
+        ];
+
+        // ตัวแปรเก็บข้อมูล State
+        let cart = JSON.parse(localStorage.getItem('peep_cart')) || [];
+        let orderHistory = JSON.parse(localStorage.getItem('peep_history')) || [];
+
+        // ฟังก์ชันเมื่อเริ่มโหลดหน้าเว็บ
+        document.addEventListener('DOMContentLoaded', () => {
+            renderMenus();
+            renderCart();
+            renderHistory();
+        });
+
+        // 1. เรนเดอร์เมนูอาหาร
+        function renderMenus() {
+            const menuContainer = document.getElementById('menu-list');
+            menuContainer.innerHTML = '';
+
+            menus.forEach(menu => {
+                menuContainer.innerHTML += `
+                    <div class="bg-zinc-800 p-5 rounded-xl border border-zinc-700 menu-card flex flex-col justify-between">
+                        <div>
+                            <div class="text-5xl mb-3 text-center drop-shadow-md animate-bounce" style="animation-duration: 3s;">${menu.emoji}</div>
+                            <h3 class="text-xl font-bold text-purple-300 mb-2">${menu.name}</h3>
+                            <p class="text-sm text-zinc-400 mb-4 line-clamp-2">${menu.desc}</p>
+                        </div>
+                        <div class="flex justify-between items-center mt-auto pt-4 border-t border-zinc-700">
+                            <span class="text-lg font-bold text-green-400">฿${menu.price.toLocaleString()}</span>
+                            <button onclick="addToCart('${menu.name}', ${menu.price})" class="px-3 py-1.5 bg-zinc-700 hover:bg-red-700 text-white rounded transition-colors text-sm">
+                                เพิ่มลงตะกร้า
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // 2. ฟังก์ชันสุ่มเมนูลับ
+        function addMysteryMenu() {
+            const prefixes = ["ต้มโคล้ง", "ซาซิมิ", "ผัดเผ็ด", "ย่างเกลือ", "ลาบ", "อบชีส"];
+            const monsters = ["คราเคน", "ซอมบี้", "มนุษย์ต่างดาว", "ปีศาจตาเดียว", "แม่มด", "โกเลมดิน"];
+            const suffixes = ["ลืมหลุม", "นรกแตก", "คำสาปฟาโรห์", "พิษอัมพาต", "มิติที่ 4"];
+            
+            const randomName = `${prefixes[Math.floor(Math.random()*prefixes.length)]}${monsters[Math.floor(Math.random()*monsters.length)]}${suffixes[Math.floor(Math.random()*suffixes.length)]}`;
+            const randomPrice = Math.floor(Math.random() * 5000) + 500; // สุ่มราคา 500 - 5500
+            
+            addToCart(`✨ [เมนูลับ] ${randomName}`, randomPrice);
+            alert(`🔮 คุณค้นพบเมนูลับ: ${randomName}\nถูกเพิ่มลงตะกร้าในราคา ฿${randomPrice.toLocaleString()}!`);
+        }
+
+        // 3. เพิ่มสินค้าลงตะกร้า
+        function addToCart(name, price) {
+            const existingItem = cart.find(item => item.name === name);
+            if (existingItem) {
+                existingItem.qty += 1;
+            } else {
+                cart.push({ name, price, qty: 1 });
+            }
+            saveCart();
+            renderCart();
+        }
+
+        // 4. ลบ/ลดจำนวนสินค้าในตะกร้า
+        function removeFromCart(index) {
+            if (cart[index].qty > 1) {
+                cart[index].qty -= 1;
+            } else {
+                cart.splice(index, 1);
+            }
+            saveCart();
+            renderCart();
+        }
+
+        // 5. เรนเดอร์ตะกร้า
+        function renderCart() {
+            const cartContainer = document.getElementById('cart-items');
+            const totalElement = document.getElementById('cart-total');
+            cartContainer.innerHTML = '';
+
+            if (cart.length === 0) {
+                cartContainer.innerHTML = '<p class="text-zinc-500 text-center italic mt-10">ตะกร้ายังว่างเปล่า... เพิ่มวิญญาณลงไปสิ</p>';
+                totalElement.innerText = '฿0';
+                return;
+            }
+
+            let total = 0;
+            cart.forEach((item, index) => {
+                const itemTotal = item.price * item.qty;
+                total += itemTotal;
+                cartContainer.innerHTML += `
+                    <div class="flex justify-between items-center bg-zinc-800 p-3 rounded border border-zinc-700">
+                        <div class="flex-1">
+                            <h4 class="text-sm font-semibold text-zinc-200">${item.name}</h4>
+                            <div class="text-xs text-zinc-400 mt-1">฿${item.price.toLocaleString()} x ${item.qty}</div>
+                        </div>
+                        <div class="text-right ml-2">
+                            <div class="text-sm font-bold text-green-400 mb-1">฿${itemTotal.toLocaleString()}</div>
+                            <button onclick="removeFromCart(${index})" class="text-xs text-red-400 hover:text-red-300 underline">ลบออก</button>
+                        </div>
+                    </div>
+                `;
+            });
+            totalElement.innerText = `฿${total.toLocaleString()}`;
+        }
+
+        // 6. ชำระเงิน
+        function checkout() {
+            if (cart.length === 0) {
+                alert("ตะกร้าว่างเปล่า! กรุณาสั่งอาหารก่อนชำระเงิน");
+                return;
+            }
+
+            const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            
+            const newOrder = {
+                id: 'ORD-' + Math.floor(Math.random() * 1000000),
+                date: new Date().toLocaleString('th-TH'),
+                items: [...cart],
+                total: total
+            };
+
+            // บันทึกลงประวัติ
+            orderHistory.unshift(newOrder); // ไว้บนสุด
+            localStorage.setItem('peep_history', JSON.stringify(orderHistory));
+
+            // เคลียร์ตะกร้า
+            cart = [];
+            saveCart();
+            
+            renderCart();
+            renderHistory();
+            
+            alert(`🩸 ทำรายการสำเร็จ!\nหมายเลขคำสั่งซื้อ: ${newOrder.id}\nยอดชำระ: ฿${total.toLocaleString()}\n\n"ขอบคุณที่ยอมสละวิญญาณ... ขอให้อร่อย"`);
+            showPage('history');
+        }
+
+        // 7. เรนเดอร์ประวัติการสั่งซื้อ
+        function renderHistory() {
+            const historyContainer = document.getElementById('history-list');
+            historyContainer.innerHTML = '';
+
+            if (orderHistory.length === 0) {
+                historyContainer.innerHTML = '<p class="text-zinc-500 text-center italic mt-10">ยังไม่มีประวัติการพลีชีพ (การสั่งซื้อ)</p>';
+                return;
+            }
+
+            orderHistory.forEach(order => {
+                let itemsHtml = order.items.map(i => `<li class="text-sm text-zinc-400">• ${i.name} (x${i.qty})</li>`).join('');
+                
+                historyContainer.innerHTML += `
+                    <div class="bg-zinc-800 p-4 rounded-xl border border-zinc-700">
+                        <div class="flex justify-between items-center mb-2 border-b border-zinc-700 pb-2">
+                            <span class="font-bold text-purple-400">${order.id}</span>
+                            <span class="text-xs text-zinc-500">${order.date}</span>
+                        </div>
+                        <ul class="mb-3 space-y-1">
+                            ${itemsHtml}
+                        </ul>
+                        <div class="text-right font-bold text-green-400">
+                            ยอดรวม: ฿${order.total.toLocaleString()}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // 8. สลับหน้าจอ (Menu / History)
+        function showPage(pageId) {
+            document.getElementById('page-menu').classList.add('hidden');
+            document.getElementById('page-history').classList.add('hidden');
+            
+            document.getElementById(`page-${pageId}`).classList.remove('hidden');
+        }
+
+        // 9. บันทึกตะกร้าลง LocalStorage
+        function saveCart() {
+            localStorage.setItem('peep_cart', JSON.stringify(cart));
+        }
+
+    </script>
+</body>
+</html>
